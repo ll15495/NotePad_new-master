@@ -202,7 +202,12 @@ public class NotesList extends ListActivity {
                 searchNotes(newText); // 搜索文本变化时调用搜索方法
                 return true;
             }
+
+
         });
+        menu.add(0, Menu.FIRST + 1, Menu.NONE, "Clear All Notes")
+                .setIcon(android.R.drawable.ic_menu_delete)
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -338,11 +343,48 @@ public class NotesList extends ListActivity {
            */
           startActivity(new Intent(Intent.ACTION_PASTE, getIntent().getData()));
           return true;
+            case Menu.FIRST + 1: // 清空所有备忘录的菜单项
+                clearAllNotes();
+                return true;
+
+            case R.id.menu_sort_alpha: // 按首字母排序的菜单项
+                sortNotesByFirstLetter();
+                return true;
         default:
             return super.onOptionsItemSelected(item);
         }
     }
 
+    private void clearAllNotes() {
+        // 删除所有备忘录
+        getContentResolver().delete(NotePad.Notes.CONTENT_URI, null, null);
+
+        // 重新加载列表
+        Cursor cursor = managedQuery(
+                getIntent().getData(),
+                PROJECTION,
+                null,
+                null,
+                NotePad.Notes.DEFAULT_SORT_ORDER
+        );
+        SimpleCursorAdapter adapter = (SimpleCursorAdapter) getListAdapter();
+        adapter.changeCursor(cursor);
+    }
+
+    private void sortNotesByFirstLetter() {
+        // 重新查询备忘录数据，并按标题首字母排序
+        Cursor cursor = managedQuery(
+                getIntent().getData(),
+                PROJECTION,
+                null,
+                null,
+                NotePad.Notes.COLUMN_NAME_TITLE + " COLLATE NOCASE ASC"
+        );
+
+        // 更新 ListView 的适配器
+        SimpleCursorAdapter adapter = (SimpleCursorAdapter) getListAdapter();
+        adapter.changeCursor(cursor);
+    }
     /**
      * This method is called when the user context-clicks a note in the list. NotesList registers
      * itself as the handler for context menus in its ListView (this is done in onCreate()).
